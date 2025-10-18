@@ -5,27 +5,10 @@ from scipy.sparse.linalg import expm, norm
 import openfermion as of
 from krylov import (
     fill_subspace_matrices_full,
-    threshold_eigenvalues, 
+    generate_u_subspace,
     energy_vs_d
 )
 from fermion_helpers import add_number_term, fock_state
-
-def generate_u_subspace(
-    psi: np.ndarray, hamiltonian: np.ndarray, t: float, d: int
-) -> List[np.ndarray]:
-    """Get the subspace spanned by {psi, U phi, U^2 psi, ... U^(d-1) phi},
-    where U = exp(-i H t)."""
-
-    u = expm(-1j * t * hamiltonian)
-    psi_evolved = psi.copy()
-    states: List[np.ndarray] = []
-    for i in range(d):
-        states.append(psi_evolved.copy())
-        if i != d - 1:
-            psi_evolved = u @ psi_evolved
-            psi_evolved = psi_evolved / la.norm(psi_evolved)
-    return states
-
 
 def main():
     l = 2

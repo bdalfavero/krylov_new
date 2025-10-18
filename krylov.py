@@ -2,6 +2,23 @@ from typing import List, Tuple
 import numpy as np
 import scipy.linalg as la
 
+def generate_u_subspace(
+    psi: np.ndarray, hamiltonian: np.ndarray, t: float, d: int
+) -> List[np.ndarray]:
+    """Get the subspace spanned by {psi, U phi, U^2 psi, ... U^(d-1) phi},
+    where U = exp(-i H t). U is computed exactly (no Trotter!)."""
+
+    u = expm(-1j * t * hamiltonian)
+    psi_evolved = psi.copy()
+    states: List[np.ndarray] = []
+    for i in range(d):
+        states.append(psi_evolved.copy())
+        if i != d - 1:
+            psi_evolved = u @ psi_evolved
+            psi_evolved = psi_evolved / la.norm(psi_evolved)
+    return states
+
+
 def fill_subspace_matrices_toeplitz(
     mat_elems: List[complex], overlaps: List[complex]
 ) -> Tuple[np.ndarray, np.ndarray]:
