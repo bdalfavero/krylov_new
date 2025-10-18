@@ -1,7 +1,9 @@
 from typing import List
+import json
 import numpy as np
 import scipy.linalg as la
 from scipy.sparse.linalg import expm, norm
+import pandas as pd
 import openfermion as of
 from krylov import (
     fill_subspace_matrices_full,
@@ -11,13 +13,15 @@ from krylov import (
 from fermion_helpers import add_number_term, fock_state
 
 def main():
-    l = 2
-    t = 1.0
-    u = 4.0
-    n_elec = 2
-    alpha = 1.0 # For number enforcement
-    eps = 1e-8
-    d = 50
+    with open("data/hubbard_params.json", "r") as f:
+        input_dict = json.load(f)
+    l = input_dict["l"]
+    t = input_dict["t"]
+    u = input_dict["u"]
+    n_elec = input_dict["n_elec"]
+    alpha = input_dict["alpha"]
+    d = input_dict["d"]
+    eps = input_dict["eps"]
 
     hamiltonian = of.hamiltonians.fermi_hubbard(l, l, t, u, spinless=True)
     ham_jw = of.transforms.jordan_wigner(hamiltonian)
@@ -38,6 +42,11 @@ def main():
     ds, energies = energy_vs_d(h, s, eps)
     for d, ener in zip(ds, energies):
         print(f"{d} {ener}")
+
+    df = pd.DataFrame({"d": ds, "energy": energies})
+    df.set_index("d", inplace=True)
+    df.index.name = "d"
+    df.to_csv("data/hubbard_u.csv")
 
 if __name__ == "__main__":
     main()
