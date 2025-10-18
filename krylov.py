@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import numpy as np
 import scipy.linalg as la
+from scipy.sparse.linalg import expm
 
 def generate_u_subspace(
     psi: np.ndarray, hamiltonian: np.ndarray, t: float, d: int
@@ -17,6 +18,20 @@ def generate_u_subspace(
             psi_evolved = u @ psi_evolved
             psi_evolved = psi_evolved / la.norm(psi_evolved)
     return states
+
+
+def toeplitz_elements_from_vectors(
+    hamiltoian: np.ndarray, states: List[np.ndarray]
+) -> Tuple[List[complex], List[complex]]:
+    """Generates <psi_0| H |psi_i> and <psi_0|psi_i> from the list of states
+    {psi_0, psi_1, ..., psi_L} and the Hamiltonian H."""
+
+    overlaps: List[complex] = []
+    mat_elems: List[complex] = []
+    for psi in states:
+        overlaps.append(np.vdot(states[0], psi))
+        mat_elems.append(np.vdot(states[0], hamiltoian @ psi))
+    return mat_elems, overlaps
 
 
 def fill_subspace_matrices_toeplitz(
