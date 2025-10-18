@@ -40,12 +40,12 @@ def main():
     ham_sparse = of.linalg.get_sparse_operator(ham_jw)
 
     # We will use a Neel state as our reference.
-    # nq = of.utils.count_qubits(ham_augmented)
-    # bools = [True, False, True, False]
-    # assert len(bools) == nq
-    # assert np.sum(bools) == n_elec
-    # psi = fock_state(bools)
-    psi = np.load("data/ground_state.npy")
+    nq = of.utils.count_qubits(ham_augmented)
+    bools = [True, False, True, False]
+    assert len(bools) == nq
+    assert np.sum(bools) == n_elec
+    psi = fock_state(bools)
+    # psi = np.load("data/ground_state.npy")
     states = generate_h_subspace(psi, ham_sparse, d)
     h, s = fill_subspace_matrices_full(ham_sparse, states)
     ds, energies = energy_vs_d(h, s, eps)

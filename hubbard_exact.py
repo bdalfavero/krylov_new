@@ -19,7 +19,7 @@ def main():
     hamiltonian = of.hamiltonians.fermi_hubbard(l, l, t, u, spinless=True)
     ham_jw = of.transforms.jordan_wigner(hamiltonian)
     ham_augmented = add_number_term(ham_jw, n_elec, alpha)
-    ham_sparse = of.linalg.get_sparse_operator(ham_jw)
+    ham_sparse = of.linalg.get_sparse_operator(ham_augmented)
 
     eigvals, eigvecs = eigsh(ham_sparse, which='SA')
     i_min = np.argmin(eigvals.real)
