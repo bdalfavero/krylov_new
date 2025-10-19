@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 from scipy.sparse.linalg import norm
 import pandas as pd
@@ -8,10 +9,17 @@ from krylov import (
     generate_u_subspace,
     generate_h_subspace,
     fill_subspace_matrices_full,
+    fill_subspace_matrices_toeplitz,
+    toeplitz_elements_from_vectors,
     energy_vs_d
 )
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("method", type=str, help="Krylov method to use.")
+    parser.add_argument("output_file", type=str, help= "CSV file for output.")
+    args = parser.parse_args()
+
     molec = "LiH"
     basis = "sto-3g"
     n_elec = 4
@@ -35,8 +43,16 @@ def main():
     tau = np.pi / norm(ham_sparse)
 
     ref_state = fock_state([True] * n_elec + [False] * (nq - n_elec))
-    states = generate_u_subspace(ref_state, ham_sparse, tau, d)
-    h, s = fill_subspace_matrices_full(ham_sparse, states)
+    if args.method == "H":
+        states = generate_h_subspace(ref_state, ham_sparse, d)
+        h, s = fill_subspace_matrices_full(ham_sparse, states)
+    elif args.method == "U":
+        states = generate_u_subspace(ref_state, ham_sparse, tau, d)
+        h, s = fill_subspace_matrices_full(ham_sparse, states)
+    elif args.method == "Toeplitz":
+        states = generate_u_subspace(ref_state, ham_sparse, tau, d)
+        mat_elems, overlaps = toeplitz_elements_from_vectors(ham_sparse, states)
+        h, s = fill_subspace_matrices_toeplitz(mat_elems, overlaps)
     ds, energies = energy_vs_d(h, s, eps)
     for dd, ener in zip(ds, energies):
         print(f"{dd} {ener}")
@@ -44,7 +60,7 @@ def main():
     df = pd.DataFrame({"d": ds, "energy": energies})
     df.set_index("d", inplace=True)
     df.index.name = "d"
-    df.to_csv("data/h2_u.csv")
+    df.to_csv(args.output_file)
 
 if __name__ == "__main__":
     main()
