@@ -1,6 +1,11 @@
 from typing import List, Tuple
 import numpy as np
 import scipy.linalg as la
+import qiskit
+from qiskit.qasm2 import dumps
+import quimb
+import quimb.tensor as qtn
+from quimb.tensor.tensor_1d import MatrixProductState, MatrixProductOperator
 from scipy.sparse.linalg import expm
 
 def generate_h_subspace(
@@ -82,6 +87,59 @@ def fill_subspace_matrices_full(
         for j in range(d):
             h[i, j] = np.vdot(states[i], hamiltonian @ states[j])
             s[i, j] = np.vdot(states[i], states[j])
+    return (h, s)
+
+
+def tebd_states_to_scratch(
+    ev_circuit: qiskit.QuantumCircuit,
+    ref_state: MatrixProductState, max_bond: int, d: int,
+    scratch_dir: str, backend_callback
+) -> List[str]:
+    """Do successive steps of TEBD with the same circuit, storing the intermediate MPS's
+    in a scratch directory."""
+
+    qasm_str = dumps(ev_circuit)
+    d_path_dict: List[str] = []
+    evolved_mps = ref_state.copy()
+    for i in range(d):
+        print(f"d = {i}")
+        fname = f"{scratch_dir}/state_{i}.dump"
+        quimb.save_to_disk(evolved_mps, fname)
+        d_path_dict.append(fname)
+        if i != d - 1:
+            if backend_callback is not None:
+                circuit_mps = qtn.circuit.CircuitMPS.from_openqasm2_str(
+                    qasm_str, psi0=evolved_mps, max_bond=max_bond, progbar=False,
+                    to_backend=backend_callback
+                )
+            else:
+                circuit_mps = qtn.circuit.CircuitMPS.from_openqasm2_str(
+                    qasm_str, psi0=evolved_mps, max_bond=max_bond, progbar=False
+                )
+            evolved_mps = circuit_mps.psi
+    return d_path_dict
+
+
+def fill_subspace_matrices_from_fname_dict(
+    fname_dict: List[str], ham_mpo: MatrixProductOperator, d: int
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Fill subspace matrices from a dictionary mapping integers (the power of the unitary)
+    to the filename where the MPS is stored."""
+
+    h = np.zeros((d, d), dtype=complex)
+    s = np.zeros((d, d), dtype=complex)
+    for i in range(d):
+        state_i = quimb.load_from_disk(fname_dict[i])
+        for j in range(i+1, d):
+            state_j = quimb.load_from_disk(fname_dict[j])
+            h[i, j] = state_i.H @ ham_mpo.apply(state_j)
+            s[i, j] = state_i.H @ state_j
+    h += h.conj().T
+    s += s.conj().T
+    for i in range(d):
+        state_i = quimb.load_from_disk(fname_dict[i])
+        h[i, i] = state_i.H @ ham_mpo.apply(state_i)
+        s[i, i] = state_i.H @ state_i
     return (h, s)
 
 
