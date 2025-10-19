@@ -5,27 +5,11 @@ import scipy.linalg as la
 import pandas as pd
 import openfermion as of
 from krylov import (
+    generate_h_subspace,
     fill_subspace_matrices_full,
-    threshold_eigenvalues, 
     energy_vs_d
 )
 from fermion_helpers import add_number_term, fock_state
-
-def generate_h_subspace(
-    psi: np.ndarray, hamiltonian: np.ndarray, d: int
-) -> List[np.ndarray]:
-    """Get the subspace spanned by {psi, H phi, H^2 psi, ... H^(d-1) phi},
-    where each state is normalized."""
-
-    psi_evolved = psi.copy()
-    states: List[np.ndarray] = []
-    for i in range(d):
-        states.append(psi_evolved.copy())
-        if i != d - 1:
-            psi_evolved = hamiltonian @ psi_evolved
-            psi_evolved = psi_evolved / la.norm(psi_evolved)
-    return states
-
 
 def main():
     with open("data/hubbard_params.json", "r") as f:
