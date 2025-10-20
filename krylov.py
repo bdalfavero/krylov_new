@@ -3,6 +3,7 @@ import numpy as np
 import scipy.linalg as la
 import qiskit
 from qiskit.qasm2 import dumps
+from qiskit_aer import AerSimulator
 import quimb
 import quimb.tensor as qtn
 from quimb.tensor.tensor_1d import MatrixProductState, MatrixProductOperator
@@ -38,6 +39,38 @@ def generate_u_subspace(
         if i != d - 1:
             psi_evolved = u @ psi_evolved
             psi_evolved = psi_evolved / la.norm(psi_evolved)
+    return states
+
+
+def _evolve_state_qiskit(
+        reference_state: np.ndarray, evolution_circuit: qiskit.QuantumCircuit, nq: int 
+) -> np.ndarray:
+    """Get the state vector corresponding to (U_evolution)^d U_prep |0>."""
+
+    sim = AerSimulator(method="statevector")
+    total_circuit = qiskit.QuantumCircuit(nq)
+    total_circuit.initialize(reference_state)
+    total_circuit = total_circuit.compose(evolution_circuit)
+    transpiled_circuit = qiskit.transpile(total_circuit, sim)
+    transpiled_circuit.save_state()
+    result = sim.run(transpiled_circuit).result()
+    sv = result.get_statevector()
+    return sv.data
+
+
+def generate_circuit_subspace(
+    psi: np.ndarray, ev_circuit: qiskit.QuantumCircuit, t: float, d: int, nq
+) -> List[np.ndarray]:
+    """Get the subspace spanned by {psi, U phi, U^2 psi, ... U^(d-1) phi},
+    where U = exp(-i H t). U is computed exactly (no Trotter!)."""
+
+    psi_evolved = psi.copy()
+    states: List[np.ndarray] = []
+    for i in range(d):
+        states.append(psi_evolved.copy())
+        if i != d - 1:
+            psi_evolved = _evolve_state_qiskit(psi_evolved, ev_circuit, nq)
+            states.append(psi_evolved.copy())
     return states
 
 
