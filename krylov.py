@@ -120,6 +120,21 @@ def tebd_states_to_scratch(
     return d_path_dict
 
 
+def toeplitz_elements_from_files(
+    fnames: List[str], ham_mpo: MatrixProductOperator
+) -> Tuple[List[complex], List[complex]]:
+    """Get matrix elements and overlaps using the stored states."""
+
+    overlaps: List[complex] = []
+    mat_elems: List[complex] = []
+    state_0 = quimb.load_from_disk(fnames[0])
+    for i in range(len(fnames)):
+        state_i = quimb.load_from_disk(fnames[i])
+        overlaps.append(state_0.H @ state_i)
+        mat_elems.append(state_0.H @ ham_mpo.apply(state_i))
+    return (mat_elems, overlaps)
+
+
 def fill_subspace_matrices_from_fname_dict(
     fname_dict: List[str], ham_mpo: MatrixProductOperator, d: int
 ) -> Tuple[np.ndarray, np.ndarray]:

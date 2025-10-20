@@ -15,11 +15,14 @@ from tensor_network_common import pauli_sum_to_mpo
 from krylov import (
     tebd_states_to_scratch,
     fill_subspace_matrices_from_fname_dict,
+    toeplitz_elements_from_files,
+    fill_subspace_matrices_toeplitz,
     energy_vs_d
 )
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("method", type=str, help="Method to fill the matrices (full or Toeplitz)")
     parser.add_argument("output_file", type=str, help="CSV file with energy vs. d.")
     args = parser.parse_args()
 
@@ -69,7 +72,13 @@ def main():
     fnames = tebd_states_to_scratch(
         ev_circuit_transpiled, ref_state_mps, max_tebd_bond, d, scratch_dir, None
     )
-    h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
+    if args.method == "full":
+        h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
+    elif args.method == "Toeplitz":
+        mat_elems, overlaps = toeplitz_elements_from_files(fnames, ham_mpo)
+        h, s = fill_subspace_matrices_toeplitz(mat_elems, overlaps)
+    else:
+        raise ValueError(f"Unrecognized method {args.method}. Must be full or Toeplitz.")
     np.save("data/hubbard_h", h)
     np.save("data/hubbard_s", s)
 
