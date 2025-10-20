@@ -30,7 +30,7 @@ def main():
     eps = 1e-8
     max_mpo_bond = 100
     max_tebd_bond = 50
-    steps = 1
+    steps = 10
 
     geometry = of.chem.geometry_from_pubchem(molec)
     multiplicity = 1
@@ -46,8 +46,8 @@ def main():
     qs = cirq.LineQubit.range(nq)
     ham_augmented = add_number_term(hamiltonian_qubop, n_elec, alpha)
     ham_sparse = of.linalg.get_sparse_operator(hamiltonian_qubop)
-    # tau = np.pi / norm(ham_sparse)
-    tau = 0.1
+    tau = np.pi / norm(ham_sparse)
+    # tau = 0.1
     print(f"tau = {tau:4.5e}")
     ham_cirq = of.transforms.qubit_operator_to_pauli_sum(hamiltonian_qubop, qs)
     ham_mpo = pauli_sum_to_mpo(ham_cirq, qs, max_mpo_bond)
