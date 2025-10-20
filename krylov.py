@@ -178,7 +178,7 @@ def threshold_eigenvalues(h: np.ndarray, s: np.ndarray, eps: float) -> Tuple[np.
     return new_h, new_s
 
 
-def energy_vs_d(h, s, eps: float, step:int = 1) -> Tuple[List[int], List[float]]:
+def energy_vs_d(h, s, eps: float, step:int = 1) -> Tuple[List[int], List[float], List[int]]:
     """Get energy vs. subspace dimension.
     If H and S are of dimension D, we can get the energy estimate
     for d < D by taking the upper left d x d blocks of H and S."""
@@ -187,10 +187,12 @@ def energy_vs_d(h, s, eps: float, step:int = 1) -> Tuple[List[int], List[float]]
     assert h.shape[0] == h.shape[1]
     ds: List[int] = []
     energies: List[float] = []
+    num_kept: List[int] = []
     for d in range(1, h.shape[0], step):
         h_d, s_d = h[:d, :d], s[:d, :d]
         ds.append(d)
         ht, st = threshold_eigenvalues(h_d, s_d, eps)
+        num_kept.append(ht.shape[0])
         lam, v = la.eig(ht, st)
         energies.append(np.min(lam).real)
-    return ds, energies
+    return ds, energies, num_kept

@@ -1,4 +1,5 @@
 import argparse
+import h5py
 import numpy as np
 from scipy.sparse.linalg import norm
 import pandas as pd
@@ -53,14 +54,24 @@ def main():
         states = generate_u_subspace(ref_state, ham_sparse, tau, d)
         mat_elems, overlaps = toeplitz_elements_from_vectors(ham_sparse, states)
         h, s = fill_subspace_matrices_toeplitz(mat_elems, overlaps)
-    ds, energies = energy_vs_d(h, s, eps)
-    for dd, ener in zip(ds, energies):
-        print(f"{dd} {ener}")
+    ds, energies, num_kept = energy_vs_d(h, s, eps)
+    for dd, ener, nkept in zip(ds, energies, num_kept):
+        print(f"{dd} {ener} {nkept}")
     
-    df = pd.DataFrame({"d": ds, "energy": energies})
-    df.set_index("d", inplace=True)
-    df.index.name = "d"
-    df.to_csv(args.output_file)
+    # df = pd.DataFrame({"d": ds, "energy": energies})
+    # df.set_index("d", inplace=True)
+    # df.index.name = "d"
+    # df.to_csv(args.output_file)
+
+    f = h5py.File(args.output_file, "w")
+    f.create_dataset("eps", data=eps)
+    f.create_dataset("tau", data=tau)
+    f.create_dataset("h", data=h)
+    f.create_dataset("s", data=s)
+    f.create_dataset("ds", data=np.array(ds))
+    f.create_dataset("energies", data=np.array(energies))
+    f.create_dataset("num_kept", data=np.array(num_kept))
+    f.close()
 
 if __name__ == "__main__":
     main()
