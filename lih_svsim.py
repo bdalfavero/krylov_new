@@ -28,7 +28,7 @@ def main():
     alpha = 1.0
     d = 60
     eps = 1e-8
-    steps = 10
+    steps = 20
 
     geometry = of.chem.geometry_from_pubchem(molec)
     multiplicity = 1
