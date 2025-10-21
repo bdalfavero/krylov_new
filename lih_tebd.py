@@ -31,7 +31,7 @@ def main():
     d = 60
     eps = 1e-8
     max_mpo_bond = 100
-    max_tebd_bond = 50
+    max_tebd_bond = 100
     steps = 10
 
     geometry = of.chem.geometry_from_pubchem(molec)
@@ -78,7 +78,6 @@ def main():
     fnames = tebd_states_to_scratch(
         ev_circuit_transpiled, reference_mps, max_tebd_bond, d, scratch_dir, None
     )
-    # TODO Checking abs(s[:, 0]), the state seems not to be evolving.
     h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
     np.save("data/lih_h", h)
     np.save("data/lih_s", s)

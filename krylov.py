@@ -191,12 +191,8 @@ def fill_subspace_matrices_from_fname_dict(
         state_i = quimb.load_from_disk(fname_dict[i])
         for j in range(d):
             state_j = quimb.load_from_disk(fname_dict[j])
-            if i >= j:
-                h[i, j] = (state_i.H @ ham_mpo.apply(state_j)).conjugate()
-                s[i, j] = (state_i.H @ state_j).conjugate()
-            else:
-                h[i, j] = state_i.H @ ham_mpo.apply(state_j)
-                s[i, j] = state_i.H @ state_j
+            h[i, j] = state_i.H @ ham_mpo.apply(state_j)
+            s[i, j] = state_i.H @ state_j
     return (h, s)
 
 
