@@ -73,7 +73,7 @@ def main():
         fnames = []
         for i, state in enumerate(states):
             mps = MatrixProductState.from_dense(state)
-            fname = f"{scratch_dir}/state_i"
+            fname = f"{scratch_dir}/state_{i}.dump"
             fnames.append(fname)
             save_to_disk(mps, fname)
         h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
