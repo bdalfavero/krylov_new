@@ -15,6 +15,12 @@ from krylov import (
     energy_vs_d
 )
 from convert import cirq_pauli_sum_to_qiskit_pauli_op
+# for debug
+from tensor_network_common import pauli_sum_to_mpo
+import cirq
+from quimb import save_to_disk
+from quimb.tensor.tensor_1d import MatrixProductState
+from krylov import fill_subspace_matrices_from_fname_dict
 
 def main():
     parser = argparse.ArgumentParser()
@@ -58,7 +64,19 @@ def main():
     ref_state = fock_state([True] * n_elec + [False] * (nq - n_elec))
     states = generate_circuit_subspace(ref_state, ev_circuit_transpiled, tau, d, nq)
     if args.method == "U":
-        h, s = fill_subspace_matrices_full(ham_sparse, states)
+        # TODO Try converting the states to MPSs and then fill from scratch.
+        # h, s = fill_subspace_matrices_full(ham_sparse, states)
+        qs = cirq.LineQubit.range(nq)
+        max_mpo_bond = 100
+        ham_mpo = pauli_sum_to_mpo(ham_cirq, qs, max_mpo_bond)
+        scratch_dir = "data/lih_scratch_new"
+        fnames = []
+        for i, state in enumerate(states):
+            mps = MatrixProductState.from_dense(state)
+            fname = f"{scratch_dir}/state_i"
+            fnames.append(fname)
+            save_to_disk(mps, fname)
+        h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
     elif args.method == "Toeplitz":
         mat_elems, overlaps = toeplitz_elements_from_vectors(ham_sparse, states)
         h, s = fill_subspace_matrices_toeplitz(mat_elems, overlaps)
