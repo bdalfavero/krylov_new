@@ -175,18 +175,28 @@ def fill_subspace_matrices_from_fname_dict(
 
     h = np.zeros((d, d), dtype=complex)
     s = np.zeros((d, d), dtype=complex)
+    # for i in range(d):
+    #     state_i = quimb.load_from_disk(fname_dict[i])
+    #     for j in range(i+1, d):
+    #         state_j = quimb.load_from_disk(fname_dict[j])
+    #         h[i, j] = state_i.H @ ham_mpo.apply(state_j)
+    #         s[i, j] = state_i.H @ state_j
+    # h += h.conj().T
+    # s += s.conj().T
+    # for i in range(d):
+    #     state_i = quimb.load_from_disk(fname_dict[i])
+    #     h[i, i] = state_i.H @ ham_mpo.apply(state_i)
+    #     s[i, i] = state_i.H @ state_i
     for i in range(d):
         state_i = quimb.load_from_disk(fname_dict[i])
-        for j in range(i+1, d):
+        for j in range(d):
             state_j = quimb.load_from_disk(fname_dict[j])
-            h[i, j] = state_i.H @ ham_mpo.apply(state_j)
-            s[i, j] = state_i.H @ state_j
-    h += h.conj().T
-    s += s.conj().T
-    for i in range(d):
-        state_i = quimb.load_from_disk(fname_dict[i])
-        h[i, i] = state_i.H @ ham_mpo.apply(state_i)
-        s[i, i] = state_i.H @ state_i
+            if i >= j:
+                h[i, j] = (state_i.H @ ham_mpo.apply(state_j)).conjugate()
+                s[i, j] = (state_i.H @ state_j).conjugate()
+            else:
+                h[i, j] = state_i.H @ ham_mpo.apply(state_j)
+                s[i, j] = state_i.H @ state_j
     return (h, s)
 
 
