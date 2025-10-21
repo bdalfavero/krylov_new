@@ -70,7 +70,6 @@ def generate_circuit_subspace(
         states.append(psi_evolved.copy())
         if i != d - 1:
             psi_evolved = _evolve_state_qiskit(psi_evolved, ev_circuit, nq)
-            states.append(psi_evolved.copy())
     return states
 
 
