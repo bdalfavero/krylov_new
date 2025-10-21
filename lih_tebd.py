@@ -6,8 +6,10 @@ import pandas as pd
 import cirq
 import openfermion as of
 import qiskit
+from qiskit.qasm2 import dumps
 from openfermionpyscf import run_pyscf
 from quimb.tensor.tensor_1d import MatrixProductState
+from quimb.tensor.circuit import CircuitMPS
 from convert import cirq_pauli_sum_to_qiskit_pauli_op
 from fermion_helpers import add_number_term, fock_state
 from tensor_network_common import pauli_sum_to_mpo
@@ -61,11 +63,20 @@ def main():
     ev_circuit_transpiled = qiskit.transpile(ev_ckt_qiskit, basis_gates=["u3", "cx"])
     qiskit.qasm2.dump(ev_circuit_transpiled, "data/lih_circuit.qasm")
 
-    ref_state = fock_state([True] * n_elec + [False] * (nq - n_elec))
-    ref_mps = MatrixProductState.from_dense(ref_state)
+    reference_circuit = qiskit.QuantumCircuit(nq)
+    for i in range(nq):
+        if i < n_elec:
+            reference_circuit.x(i)
+    ref_circuit_qasm = dumps(reference_circuit)
+    quimb_circuit = CircuitMPS.from_openqasm2_str(ref_circuit_qasm)
+    reference_mps = quimb_circuit.psi
+
+    # ref_state = fock_state([True] * n_elec + [False] * (nq - n_elec))
+    # ref_mps = MatrixProductState.from_dense(ref_state)
+
     scratch_dir = "data/lih_scratch"
     fnames = tebd_states_to_scratch(
-        ev_circuit_transpiled, ref_mps, max_tebd_bond, d, scratch_dir, None
+        ev_circuit_transpiled, reference_mps, max_tebd_bond, d, scratch_dir, None
     )
     # TODO Checking abs(s[:, 0]), the state seems not to be evolving.
     h, s = fill_subspace_matrices_from_fname_dict(fnames, ham_mpo, d)
