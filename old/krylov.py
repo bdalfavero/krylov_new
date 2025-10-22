@@ -35,6 +35,7 @@ def generate_u_subspace(
     psi_evolved = psi.copy()
     states: List[np.ndarray] = []
     for i in range(d):
+        print(f"i = {i}")
         states.append(psi_evolved.copy())
         if i != d - 1:
             psi_evolved = u @ psi_evolved
