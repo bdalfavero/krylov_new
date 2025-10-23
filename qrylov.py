@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import numpy as np
 import scipy as sp
+from scipy.sparse.linalg import expm
 
 def fill_h_and_s_matrices(
     vectors: List[np.ndarray],
@@ -46,12 +47,23 @@ def solve_regularized_gen_eig(
         )
         h_reg = good_vecs.conj() @ h @ good_vecs.T
         s_reg = good_vecs.conj() @ s @ good_vecs.T
-        return sp.linalg.eigh(h_reg, s_reg)[0][0]
+    return sp.linalg.eigh(h_reg, s_reg)[0][0]
+
+
+def energy_vs_d(h, s, eps):
+    energies = []
+    ds = []
+    for d in range(1, h.shape[0]):
+        krylov_energy = solve_regularized_gen_eig(h[:d, :d], s[:d, :d], threshold=eps)
+        energies.append(krylov_energy)
+        ds.append(d)
+    return ds, energies
 
 
 def generate_u_subspace(matrix, bvec, dt, subspace_dimension) -> List[np.ndarray]:
     vectors_u = []
     for k in range(-subspace_dimension // 2, subspace_dimension // 2 + 1, 1):
-        print(k)
-        Uk = sp.linalg.expm(-1j * matrix * k * dt)
+        print(f"k = {k}")
+        Uk = expm(-1j * matrix * k * dt)
         vectors_u.append(Uk @ bvec)
+    return vectors_u
